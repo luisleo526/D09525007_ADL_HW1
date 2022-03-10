@@ -44,8 +44,7 @@ def main(args):
     evals=DataLoader(datasets['eval'],batch_size=args.batch_size, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['eval'].collate_fn(x)))
 
     with open(f"./{args.num_layers:d}_result","a") as f:
-        f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}")
-        f.write("="*40)
+        f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
     best_acc=0
     for i in range(3):
         train=DataLoader(datasets['train'],batch_size=args.batch_size*2**i, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
@@ -94,7 +93,7 @@ def main(args):
             print("="*40)
             print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
             with open(f"./{args.num_layers:d}_result","a") as f:
-                f.write(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.")
+                f.write(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.\n")
             print("="*40)
             if acc > best_acc :
                 best_acc = acc
