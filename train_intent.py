@@ -78,7 +78,7 @@ def main(args):
 
                 acc=acc.item()/n*100
 
-                if epoch % 20 == 0:
+                if epoch % 500 == 0 and epoch != 0:
                     print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
             model.eval()
@@ -127,7 +127,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=18)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=128)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.05)
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -142,7 +142,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=1000)
+    parser.add_argument("--num_epoch", type=int, default=2000)
 
     # output
     parser.add_argument("--name", type=str, default="")
