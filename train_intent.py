@@ -58,12 +58,13 @@ def main(args):
             epoch_pbar = trange(args.num_epoch, desc="Epoch")
             old_acc=0
             _epoch=None
+            lr = args.lr
             for epoch in epoch_pbar:
 
-                if old_acc > 70 :
+                if old_acc > 90 :
                     if _epoch is None:
                         _epoch = epoch
-                    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 20))
+                    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 50))
                     for param_group in optimizer.param_groups:
                         param_group['lr'] = lr
 
@@ -85,20 +86,24 @@ def main(args):
 
                 acc=acc.item()/n*100
 
-                if acc > 90 and (old_acc-acc)/acc*100 < 0.01 : break
+                if acc > 95 and (old_acc-acc)/acc*100 < 0.01 and lr < 1: break
                 old_acc=acc
 
-                if epoch % 50 == 0:
-                    print(f"Epoch: {epoch:5d}, Accuracy {acc:.4f}%")
+                if epoch % 20 == 0:
+                    print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
             model.eval()
+            acc=0
             for labels, texts in evals:
                 out = model(texts)
                 p_labels = torch.argmax(out, dim=1)
                 acc=acc+torch.sum(p_labels == labels)
                 n = n + len(labels)
             acc=acc.item()/n*100
-
+            
+            print("="*40)
+            print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:d}, Accuracy: {acc:.4f}%")
+            print("="*40)
             if acc > best_acc :
                 best_acc = acc
                 best_paras = model.state_dict()
@@ -130,7 +135,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=20)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=256)
+    parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.05)
     parser.add_argument("--bidirectional", type=bool, default=True)
