@@ -57,11 +57,15 @@ def main(args):
 
             epoch_pbar = trange(args.num_epoch, desc="Epoch")
             old_acc=0
+            _epoch=None
             for epoch in epoch_pbar:
 
-                lr = args.lr * (0.2 ** (epoch // 20))
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = lr
+                if old_acc > 70 :
+                    if _epoch is None:
+                        _epoch = epoch
+                    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 20))
+                    for param_group in optimizer.param_groups:
+                        param_group['lr'] = lr
 
                 model.train()
                 acc=0
