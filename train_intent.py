@@ -83,6 +83,7 @@ def main(args):
 
             model.eval()
             acc=0
+            n=0
             for labels, texts in evals:
                 out = model(texts)
                 p_labels = torch.argmax(out, dim=1)
@@ -126,13 +127,13 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=20)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=256)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.05)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=10)
+    parser.add_argument("--lr", type=float, default=5)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=32)
@@ -141,7 +142,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=500)
+    parser.add_argument("--num_epoch", type=int, default=700)
 
     args = parser.parse_args()
     return args
