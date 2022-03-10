@@ -9,6 +9,8 @@ from tqdm import trange
 
 from dataset import SeqClsDataset
 from utils import Vocab
+from torch.utils.data import Dataset, DataLoader
+from model import SeqClassifier
 
 import torch.optim as optim
 
@@ -71,7 +73,7 @@ def main(args):
         acc=acc.item()/n*100
 
         if epoch % 50 == 0:
-            print(f"Epoch: {epoch:5d}, Accuracy {acc:.4f}")
+            print(f"Epoch: {epoch:5d}, Accuracy {acc:.4f}%")
         # TODO: Training loop - iterate over train dataloader and update model weights
         # TODO: Evaluation loop - calculate accuracy and save model weights
         pass
@@ -104,7 +106,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=128)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=256)
     parser.add_argument("--num_layers", type=int, default=2)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -117,7 +119,7 @@ def parse_args() -> Namespace:
 
     # training
     parser.add_argument(
-        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
     parser.add_argument("--num_epoch", type=int, default=1000)
 
