@@ -43,6 +43,9 @@ def main(args):
 
     evals=DataLoader(datasets['eval'],batch_size=args.batch_size, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['eval'].collate_fn(x)))
 
+    with open(f"./{args.num_layers:d}_result","a") as f:
+        f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}")
+        f.write("="*40)
     best_acc=0
     for i in range(3):
         train=DataLoader(datasets['train'],batch_size=args.batch_size*2**i, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
@@ -56,18 +59,7 @@ def main(args):
             criterion.to(device)
 
             epoch_pbar = trange(args.num_epoch, desc="Epoch")
-            old_acc=0
-            _epoch=None
-            lr = args.lr
-            cnt=0
             for epoch in epoch_pbar:
-
-                #if old_acc > 90 :
-                #    if _epoch is None:
-                #        _epoch = epoch
-                #    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 50))
-                #    for param_group in optimizer.param_groups:
-                #        param_group['lr'] = lr
 
                 model.train()
                 acc=0
@@ -87,10 +79,6 @@ def main(args):
 
                 acc=acc.item()/n*100
 
-                if acc > 90 and (old_acc-acc)/acc*100 < 0.0001: cnt+=1
-                if cnt > 5 : break
-                old_acc=acc
-
                 if epoch % 20 == 0:
                     print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
@@ -105,6 +93,8 @@ def main(args):
             
             print("="*40)
             print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
+            with open(f"./{args.num_layers:d}_result","a") as f:
+                f.write(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.")
             print("="*40)
             if acc > best_acc :
                 best_acc = acc
@@ -152,7 +142,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=1000)
+    parser.add_argument("--num_epoch", type=int, default=500)
 
     args = parser.parse_args()
     return args
