@@ -42,65 +42,64 @@ def main(args):
     }
 
     evals=DataLoader(datasets['eval'],batch_size=args.batch_size, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['eval'].collate_fn(x)))
+    train=DataLoader(datasets['train'],batch_size=args.batch_size*2**i, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
 
     with open(f"./{args.name}_result","w") as f:
         f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
+    
     best_acc=0
-    for i in range(3):
-        train=DataLoader(datasets['train'],batch_size=args.batch_size*2**i, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
+    for j in range(5):
+        model = SeqClassifier(embeddings=embeddings,hidden_size=args.hidden_size,
+                            num_layers=args.num_layers,dropout=args.dropout*2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
+        model.to(device)
+        optimizer = optim.SGD(model.parameters(), lr=args.lr)
+        criterion = torch.nn.CrossEntropyLoss()
+        criterion.to(device)
 
-        for j in range(3):
-            model = SeqClassifier(embeddings=embeddings,hidden_size=args.hidden_size,
-                                num_layers=args.num_layers,dropout=args.dropout*2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
-            model.to(device)
-            optimizer = optim.SGD(model.parameters(), lr=args.lr)
-            criterion = torch.nn.CrossEntropyLoss()
-            criterion.to(device)
+        epoch_pbar = trange(args.num_epoch, desc="Epoch")
+        for epoch in epoch_pbar:
 
-            epoch_pbar = trange(args.num_epoch, desc="Epoch")
-            for epoch in epoch_pbar:
-
-                model.train()
-                acc=0
-                n=0
-                for labels, texts in train:
-
-                    out = model(texts)
-                    p_labels = torch.argmax(out, dim=1)
-
-                    loss = criterion(out, labels)
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-
-                    acc=acc+torch.sum(p_labels == labels)
-                    n = n + len(labels)
-
-                acc=acc.item()/n*100
-
-                if epoch % 20 == 0:
-                    print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
-
-            model.eval()
+            model.train()
             acc=0
             n=0
-            for labels, texts in evals:
+            for labels, texts in train:
+
                 out = model(texts)
                 p_labels = torch.argmax(out, dim=1)
+
+                loss = criterion(out, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
                 acc=acc+torch.sum(p_labels == labels)
                 n = n + len(labels)
-            acc=acc.item()/n*100
-            
-            print("="*40)
-            print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
-            with open(f"./{args.name}_result","a") as f:
-                f.write(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.\n")
-            print("="*40)
-            if acc > best_acc :
-                best_acc = acc
-                best_paras = model.state_dict()
 
-    torch.save(best_paras,args.ckpt_dir / f"{args.num_layers:d}_best_model.pth")
+            acc=acc.item()/n*100
+
+            if epoch % 200 == 0:
+                print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
+
+        model.eval()
+        acc=0
+        n=0
+        for labels, texts in evals:
+            out = model(texts)
+            p_labels = torch.argmax(out, dim=1)
+            acc=acc+torch.sum(p_labels == labels)
+            n = n + len(labels)
+        acc=acc.item()/n*100
+        
+        print("="*40)
+        print(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
+        with open(f"./{args.name}_result","a") as f:
+            f.write(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.\n")
+        print("="*40)
+        if acc > best_acc :
+            best_acc = acc
+            best_paras = model.state_dict()
+
+    torch.save(best_paras,args.ckpt_dir / f"{args.name:d}_best_model.pth")
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
@@ -129,14 +128,14 @@ def parse_args() -> Namespace:
     # model
     parser.add_argument("--hidden_size", type=int, default=512)
     parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.05)
+    parser.add_argument("--dropout", type=float, default=0.01)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
     parser.add_argument("--lr", type=float, default=3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=128)
 
     # training
     parser.add_argument(
