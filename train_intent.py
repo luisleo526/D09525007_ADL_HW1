@@ -59,14 +59,15 @@ def main(args):
             old_acc=0
             _epoch=None
             lr = args.lr
+            cnt=0
             for epoch in epoch_pbar:
 
-                if old_acc > 90 :
-                    if _epoch is None:
-                        _epoch = epoch
-                    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 50))
-                    for param_group in optimizer.param_groups:
-                        param_group['lr'] = lr
+                #if old_acc > 90 :
+                #    if _epoch is None:
+                #        _epoch = epoch
+                #    lr = args.lr * (0.2 ** ( (epoch-_epoch) // 50))
+                #    for param_group in optimizer.param_groups:
+                #        param_group['lr'] = lr
 
                 model.train()
                 acc=0
@@ -86,7 +87,8 @@ def main(args):
 
                 acc=acc.item()/n*100
 
-                if acc > 95 and (old_acc-acc)/acc*100 < 0.01 and lr < 1: break
+                if acc > 90 and (old_acc-acc)/acc*100 < 0.0001: cnt+=1
+                if cnt > 5 : break
                 old_acc=acc
 
                 if epoch % 20 == 0:
@@ -102,13 +104,13 @@ def main(args):
             acc=acc.item()/n*100
             
             print("="*40)
-            print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:d}, Accuracy: {acc:.4f}%")
+            print(f"Batch_size: {args.batch_size*2**i:d}, Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
             print("="*40)
             if acc > best_acc :
                 best_acc = acc
                 best_paras = model.state_dict()
 
-    torch.save(best_paras,args.ckpt_dir / "best_model.pth")
+    torch.save(best_paras,args.ckpt_dir / f"{args.num_layers:d}_best_model.pth")
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
