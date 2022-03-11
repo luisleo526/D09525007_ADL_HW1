@@ -85,7 +85,7 @@ def main(args):
                 n = n + len(labels)
             acc=acc.item()/n*100
 
-            epoch_pbar.set_postfix(fold={fold:d}/{ks.get_n_splits()},Acc=f"{acc:.2f}%")
+            epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",Acc=f"{acc:.2f}%")
 
         f_acc += acc / kf.get_n_splits()
 
