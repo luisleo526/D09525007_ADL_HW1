@@ -53,7 +53,7 @@ def main(args):
                             num_layers=args.num_layers,dropout=args.dropout*2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
         model.to(device)
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
         criterion = torch.nn.CrossEntropyLoss()
         criterion.to(device)
 
@@ -83,10 +83,10 @@ def main(args):
                 n = n + len(labels)
             acc=acc.item()/n*100                
 
-            if acc > _acc :
-                _acc = acc
-            elif _acc > 60:
-                scheduler.step()
+            # if acc > _acc :
+            #     _acc = acc
+            # elif _acc > 60:
+            #     scheduler.step()
 
             if epoch % 100 == 0:
                 print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%, LR={scheduler.get_last_lr()[0]}")
