@@ -135,7 +135,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1)
+    parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=128)
@@ -144,7 +144,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=5000)
+    parser.add_argument("--num_epoch", type=int, default=20000)
 
     # output
     parser.add_argument("--name", type=str, default="")
