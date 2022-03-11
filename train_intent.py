@@ -89,7 +89,8 @@ def main(args):
             #     scheduler.step()
 
             if epoch % 100 == 0:
-                print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%, LR={scheduler.get_last_lr()[0]}")
+                # print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%, LR={scheduler.get_last_lr()[0]}")
+                print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
         print("="*40)
         print(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
