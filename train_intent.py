@@ -42,7 +42,7 @@ def main(args):
     }
 
     evals=DataLoader(datasets['eval'],batch_size=args.batch_size, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['eval'].collate_fn(x)))
-    train=DataLoader(datasets['train'],batch_size=args.batch_size*2**i, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
+    train=DataLoader(datasets['train'],batch_size=args.batch_size, shuffle=False, collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets['train'].collate_fn(x)))
 
     with open(f"./{args.name}_result","w") as f:
         f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
@@ -99,7 +99,8 @@ def main(args):
             best_acc = acc
             best_paras = model.state_dict()
 
-    torch.save(best_paras,args.ckpt_dir / f"{args.name:d}_best_model.pth")
+        torch.save(best_paras,args.ckpt_dir / f"./{args.name}_best_model.pth")
+    
 
 def parse_args() -> Namespace:
     parser = ArgumentParser()
@@ -126,22 +127,22 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=18)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--hidden_size", type=int, default=128)
     parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.01)
+    parser.add_argument("--dropout", type=float, default=0.02)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=3)
+    parser.add_argument("--lr", type=float, default=5)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=256)
 
     # training
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=1000)
+    parser.add_argument("--num_epoch", type=int, default=3000)
 
     # output
     parser.add_argument("--name", type=str, default="")
