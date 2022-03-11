@@ -59,8 +59,8 @@ def main(args):
         criterion = torch.nn.CrossEntropyLoss()
         criterion.to(device)
 
-        train_loader=DataLoader(datasets,batch_size=128,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(train_ind))
-        test_loader=DataLoader(datasets,batch_size=128,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
+        train_loader=DataLoader(datasets,batch_size=args.batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(train_ind))
+        test_loader=DataLoader(datasets,batch_size=args.batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
 
         epoch_pbar = trange(args.num_epoch, desc="Epoch")
         for epoch in epoch_pbar:
@@ -85,11 +85,9 @@ def main(args):
                 n = n + len(labels)
             acc=acc.item()/n*100
 
-            epoch_pbar.set_postfix(fold=fold,Acc=f"{acc:.2f}%")
-            sleep(0.1)
+            epoch_pbar.set_postfix(fold={fold:d}/{ks.get_n_splits()},Acc=f"{acc:.2f}%")
 
         f_acc += acc / kf.get_n_splits()
-        print('*'*40)
 
     info=f"Dropout:{args.dropout:.4f}, hidden_size:{args.hidden_size:d}, layers:{args.num_layers:d}, batch_size:{args.batch_size:d}\n"
     info+=f"Accuracy: {f_acc:.2f}%"
