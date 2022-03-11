@@ -48,11 +48,12 @@ def main(args):
         f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
     
     best_acc=0
-    for j in range(5):
+    for j in range(1):
         model = SeqClassifier(embeddings=embeddings,hidden_size=args.hidden_size,
                             num_layers=args.num_layers,dropout=args.dropout/2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
         model.to(device)
-        optimizer = optim.SGD(model.parameters(), lr=args.lr)
+        #optimizer = optim.SGD(model.parameters(), lr=args.lr)
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
         criterion = torch.nn.CrossEntropyLoss()
         criterion.to(device)
@@ -88,7 +89,7 @@ def main(args):
             # elif _acc > 60:
             #     scheduler.step()
 
-            if epoch % 100 == 0:
+            if epoch % 30 == 0:
                 # print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%, LR={scheduler.get_last_lr()[0]}")
                 print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
@@ -135,7 +136,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=1e-4)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=128)
@@ -144,7 +145,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=20000)
+    parser.add_argument("--num_epoch", type=int, default=200)
 
     # output
     parser.add_argument("--name", type=str, default="")

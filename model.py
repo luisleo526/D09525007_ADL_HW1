@@ -19,7 +19,7 @@ class SeqClassifier(torch.nn.Module):
 
         # TODO: model architecture
         self.lstm = torch.nn.LSTM(input_size=self.embed.embedding_dim,hidden_size=hidden_size,num_layers=num_layers,dropout=dropout,bidirectional=bidirectional)
-        self.fc = torch.nn.Linear(2*hidden_size, num_class)
+        self.fc = torch.nn.Linear(hidden_size, num_class)
         self.act = torch.nn.Softmax(dim=1)
 
     @property
@@ -33,6 +33,7 @@ class SeqClassifier(torch.nn.Module):
         x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
         out_pack, (ht, ct) = self.lstm(x)
 
-        hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
+       # hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
+        hidden = ht[-1,:,:]
         out = self.act(self.fc(hidden))
         return out
