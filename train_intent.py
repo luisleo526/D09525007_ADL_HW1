@@ -50,7 +50,7 @@ def main(args):
     best_acc=0
     for j in range(5):
         model = SeqClassifier(embeddings=embeddings,hidden_size=args.hidden_size,
-                            num_layers=args.num_layers,dropout=args.dropout*2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
+                            num_layers=args.num_layers,dropout=args.dropout/2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
         model.to(device)
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
         # scheduler = optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
@@ -85,7 +85,7 @@ def main(args):
 
             if acc > 80:
                 for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.1   
+                    param_group['lr'] = 0.5   
 
             # if acc > _acc :
             #     _acc = acc
@@ -97,9 +97,9 @@ def main(args):
                 print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
 
         print("="*40)
-        print(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
+        print(f"Dropout: {args.dropout/2**j:.4f}, Accuracy: {acc:.4f}%")
         with open(f"./{args.name}_result","a") as f:
-            f.write(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%.\n")
+            f.write(f"Dropout: {args.dropout/2**j:.4f}, Accuracy: {acc:.4f}%.\n")
         print("="*40)
         if acc > best_acc :
             best_acc = acc
@@ -135,7 +135,7 @@ def parse_args() -> Namespace:
     # model
     parser.add_argument("--hidden_size", type=int, default=128)
     parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.02)
+    parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
