@@ -81,7 +81,11 @@ def main(args):
                 p_labels = torch.argmax(out, dim=1)
                 acc=acc+torch.sum(p_labels == labels)
                 n = n + len(labels)
-            acc=acc.item()/n*100                
+            acc=acc.item()/n*100
+
+            if acc > 80:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 0.1   
 
             # if acc > _acc :
             #     _acc = acc
