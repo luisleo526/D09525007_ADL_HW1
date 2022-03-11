@@ -20,8 +20,8 @@ class SeqClassifier(torch.nn.Module):
         # TODO: model architecture
         # self.rnn = torch.nn.LSTM(input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional)
         self.rnn = torch.nn.GRU( input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional)
-
-        self.fc = torch.nn.Linear(hidden_size, num_class)
+        self.fc1 = torch.nn.Linear(hidden_size*2, hidden_size)
+        self.fc2 = torch.nn.Linear(hidden_size, num_class)
         self.act = torch.nn.Softmax(dim=1)
 
     @property
@@ -30,13 +30,15 @@ class SeqClassifier(torch.nn.Module):
         raise NotImplementedError
 
     def forward(self, batch) -> Dict[str, torch.Tensor]:
-        # TODO: implement model forward
+
         x = self.embed(batch)
         x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
+
         # out_pack, (ht, ct) = self.rnn(x)
         out_pack, ht = self.rnn(x)
 
-       # hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
-        hidden = ht[-1,:,:]
-        out = self.act(self.fc(hidden))
+        hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
+        # hidden = ht[-1,:,:]
+
+        out = self.act(self.fc2(self.fc1(hidden)))
         return out
