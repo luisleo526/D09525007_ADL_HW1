@@ -53,15 +53,16 @@ def main(args):
                             num_layers=args.num_layers,dropout=args.dropout*2**j,bidirectional=args.bidirectional,num_class=len(intent2idx))
         model.to(device)
         optimizer = optim.SGD(model.parameters(), lr=args.lr)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
         criterion = torch.nn.CrossEntropyLoss()
         criterion.to(device)
 
+        # Train loop
+        _acc=0
         epoch_pbar = trange(args.num_epoch, desc="Epoch")
         for epoch in epoch_pbar:
 
             model.train()
-            acc=0
-            n=0
             for labels, texts in train:
 
                 out = model(texts)
@@ -72,24 +73,24 @@ def main(args):
                 loss.backward()
                 optimizer.step()
 
+            model.eval()
+            acc=0
+            n=0
+            for labels, texts in evals:
+                out = model(texts)
+                p_labels = torch.argmax(out, dim=1)
                 acc=acc+torch.sum(p_labels == labels)
                 n = n + len(labels)
+            acc=acc.item()/n*100                
 
-            acc=acc.item()/n*100
+            if acc > _acc :
+                _acc = acc
+            elif _acc > 60:
+                scheduler.step()
 
-            if epoch % 200 == 0:
-                print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%")
+            if epoch % 100 == 0:
+                print(f"\nEpoch: {epoch:5d}, Accuracy {acc:.4f}%, LR={scheduler.get_last_lr()[0]}")
 
-        model.eval()
-        acc=0
-        n=0
-        for labels, texts in evals:
-            out = model(texts)
-            p_labels = torch.argmax(out, dim=1)
-            acc=acc+torch.sum(p_labels == labels)
-            n = n + len(labels)
-        acc=acc.item()/n*100
-        
         print("="*40)
         print(f"Dropout: {args.dropout*2**j:.4f}, Accuracy: {acc:.4f}%")
         with open(f"./{args.name}_result","a") as f:
