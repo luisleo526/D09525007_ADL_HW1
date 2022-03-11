@@ -18,7 +18,9 @@ class SeqClassifier(torch.nn.Module):
         self.embed = Embedding.from_pretrained(embeddings, freeze=False)
 
         # TODO: model architecture
-        self.lstm = torch.nn.LSTM(input_size=self.embed.embedding_dim,hidden_size=hidden_size,num_layers=num_layers,dropout=dropout,bidirectional=bidirectional)
+        # self.rnn = torch.nn.LSTM(input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional)
+        self.rnn = torch.nn.GRU( input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional)
+
         self.fc = torch.nn.Linear(hidden_size, num_class)
         self.act = torch.nn.Softmax(dim=1)
 
@@ -31,7 +33,7 @@ class SeqClassifier(torch.nn.Module):
         # TODO: implement model forward
         x = self.embed(batch)
         x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
-        out_pack, (ht, ct) = self.lstm(x)
+        out_pack, (ht, ct) = self.rnn(x)
 
        # hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
         hidden = ht[-1,:,:]
