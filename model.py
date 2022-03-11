@@ -33,7 +33,8 @@ class SeqClassifier(torch.nn.Module):
         # TODO: implement model forward
         x = self.embed(batch)
         x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
-        out_pack, (ht, ct) = self.rnn(x)
+        # out_pack, (ht, ct) = self.rnn(x)
+        out_pack, ht = self.rnn(x)
 
        # hidden = torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1)
         hidden = ht[-1,:,:]
