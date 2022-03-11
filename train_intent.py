@@ -85,8 +85,8 @@ def main(args):
                 n = n + len(labels)
             acc=acc.item()/n*100
 
-            if epoch % 60 == 0:
-                print(f"\nFold: {fold}, Epoch: {epoch:5d}, Accuracy {acc:.4f}%")
+            epoch_pbar.set_postfix(fold=fold,Acc=f"{acc:.2f}%")
+            sleep(0.1)
 
         f_acc += acc / kf.get_n_splits()
         print('*'*40)
