@@ -43,7 +43,7 @@ def main(args):
         f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
 
     torch.manual_seed(12)
-    kf = KFold(n_splits=10)
+    kf = KFold(n_splits=args.split)
 
     fold=0
     f_acc=0
@@ -92,6 +92,7 @@ def main(args):
     info=f"Dropout:{args.dropout:.4f}, hidden_size:{args.hidden_size:d}, layers:{args.num_layers:d}, batch_size:{args.batch_size:d}\n"
     info+=f"Accuracy: {f_acc:.2f}%"
     print("="*40)
+    print(info)
     with open(f"./{args.name}_result","a") as f:
         f.write(f"{info}\n")
     print("="*40)
@@ -120,16 +121,16 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=24)
+    parser.add_argument("--max_len", type=int, default=32)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=256)
-    parser.add_argument("--num_layers", type=int, default=2)
+    parser.add_argument("--hidden_size", type=int, default=512)
+    parser.add_argument("--num_layers", type=int, default=3)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
     parser.add_argument("--batch_size", type=int, default=256)
@@ -138,7 +139,8 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=360)
+    parser.add_argument("--num_epoch", type=int, default=30)
+    parser.add_argument("--split",type=int,default=5)
 
     # output
     parser.add_argument("--name", type=str, default="default_name")
