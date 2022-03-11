@@ -83,10 +83,6 @@ def main(args):
                 n = n + len(labels)
             acc=acc.item()/n*100
 
-            if acc > 80:
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 0.5   
-
             # if acc > _acc :
             #     _acc = acc
             # elif _acc > 60:
@@ -133,9 +129,9 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=18)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=128)
+    parser.add_argument("--hidden_size", type=int, default=64)
     parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.3)
+    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
