@@ -156,7 +156,7 @@ def main(args):
                 for opt in optimizer: opt.step()
 
             tacc=tacc.item()/n*100
-            epoch_pbar.set_postfix(Acc=f"{tacc:.4f}% / {acc:.4f}%")
+            epoch_pbar.set_postfix(Acc=f"{tacc:.4f}%")
 
         torch.save(model.state_dict(),args.ckpt_dir / f"./{args.name}_best_model.pth")
     
