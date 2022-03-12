@@ -10,6 +10,7 @@ from dataset import SeqClsDataset
 from model import SeqClassifier
 from utils import Vocab
 
+import csv  
 
 def main(args):
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
@@ -20,7 +21,8 @@ def main(args):
 
     data = json.loads(args.test_file.read_text())
     dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
-    # TODO: crecate DataLoader for test dataset
+
+    print( max([len(x['text'].split()) for x in data]) )
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
@@ -32,14 +34,30 @@ def main(args):
         args.bidirectional,
         dataset.num_classes,
     )
-    model.eval()
 
     ckpt = torch.load(args.ckpt_path)
-    # load weights into model
+    model.load_state_dict(ckpt)
+    model.to(torch.device(args.device))
+    model.eval()
+    
+    x=[]
+    for data in dataset.data:
+        text = data['text'].split()
+        x.append(text)
+        
+    x = dataset.vocab.encode_batch(batch_tokens=x,to_len=dataset.max_len)
+    x = torch.tensor(x,dtype=torch.int64).to(args.device)
 
-    # TODO: predict dataset
+    p_label =model(x)
+    p_label=torch.argmax(p_label, dim=1)
 
-    # TODO: write prediction to file (args.pred_file)
+    with open(args.pred_file,'w',newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['id','intent'])
+        n=0
+        for label in p_label:
+            writer.writerow([f"test-{n}",f"{dataset.idx2label(label.item())}"])
+            n=n+1
 
 
 def parse_args() -> Namespace:
@@ -48,7 +66,7 @@ def parse_args() -> Namespace:
         "--test_file",
         type=Path,
         help="Path to the test file.",
-        required=True
+        default="./data/intent/test.json",
     )
     parser.add_argument(
         "--cache_dir",
@@ -60,24 +78,24 @@ def parse_args() -> Namespace:
         "--ckpt_path",
         type=Path,
         help="Path to model checkpoint.",
-        required=True
+        default="./ckpt/intent/intent_best_model.pth"
     )
     parser.add_argument("--pred_file", type=Path, default="pred.intent.csv")
 
     # data
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=32)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)
-    parser.add_argument("--num_layers", type=int, default=2)
-    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--hidden_size", type=int, default=1024)
+    parser.add_argument("--num_layers", type=int, default=3)
+    parser.add_argument("--dropout", type=float, default=0.01)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--batch_size", type=int, default=256)
 
     parser.add_argument(
-        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
     args = parser.parse_args()
     return args
