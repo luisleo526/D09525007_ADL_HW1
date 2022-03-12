@@ -30,9 +30,9 @@ class SeqClassifier(torch.nn.Module):
         x = self.embed(batch)
         x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
 
-        out_pack, ht = self.rnn(x)
+        out_pack, paras = self.rnn(x)
 
-        hidden = ht[-1,:,:]
+        hidden = paras[0][-1,:,:]
         hidden = self.fc(hidden)
 
         return hidden
