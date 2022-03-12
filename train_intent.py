@@ -60,7 +60,7 @@ def main(args):
             model.to(device)
             #optimizer = optim.SGD(model.parameters(), lr=args.lr)
             optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                         ,optim.SGD(model.parameters(), lr=args.lr) ]
+                         ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.9) ]
             #criterion = torch.nn.CrossEntropyLoss()
             criterion = torch.nn.NLLLoss()
             criterion.to(device)
