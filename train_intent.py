@@ -158,7 +158,7 @@ def main(args):
             tacc=tacc.item()/n*100
             epoch_pbar.set_postfix(Acc=f"{tacc:.4f}%")
 
-        torch.save(model.state_dict(),args.ckpt_dir / f"./{args.name}_best_model.pth")
+        torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
     
 def parse_args() -> Namespace:
     parser = ArgumentParser()
