@@ -44,11 +44,12 @@ def main(args):
 
     if args.split > 1:
 
-        for i in range(1,5):
-
-            hidden_size = args.hidden_size
-            num_layers = i+1 #args.num_layers
-            batch_size = args.batch_size 
+        for i in range(3):
+            
+            hidden_size = 1024 #args.hidden_size
+            num_layers  = 2+i  #args.num_layers
+            batch_size  = 512  #args.batch_size
+            dropout     = 0.32
 
             torch.manual_seed(12)
             kf = KFold(n_splits=args.split)
@@ -58,11 +59,11 @@ def main(args):
 
                 fold+=1
                 model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
-                            num_layers=num_layers,dropout=args.dropout,bidirectional=args.bidirectional,num_class=len(intent2idx))
+                            num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(intent2idx))
 
                 model.to(device)
                 optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                             ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.9) ]
+                             ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.8) ]
                 #criterion = torch.nn.CrossEntropyLoss()
                 criterion = torch.nn.NLLLoss()
                 criterion.to(device)
@@ -75,7 +76,7 @@ def main(args):
 
                     if len(optimizer) > 1:
                         for g in optimizer[-1].param_groups:
-                            g['lr'] = args.lr * 0.2 ** ( epoch // 4 )
+                            g['lr'] = args.lr * 0.2 ** ( epoch // 3 )
 
                     tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
 
@@ -83,7 +84,7 @@ def main(args):
 
                 f_acc += acc / args.split
 
-            info=f"Dropout:{args.dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}\n"
+            info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}\n"
             info+=f"Accuracy: {f_acc:.2f}%"
             print("="*40)
             print(info)
@@ -182,15 +183,15 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=1024)  #1024
-    parser.add_argument("--num_layers", type=int, default=3)     #3
-    parser.add_argument("--dropout", type=float, default=0.01)   #0.01
+    parser.add_argument("--num_layers", type=int, default=2)     #3
+    parser.add_argument("--dropout", type=float, default=0.32)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
     parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)   #128
+    parser.add_argument("--batch_size", type=int, default=512)   #128
 
     # training
     parser.add_argument(
