@@ -25,10 +25,10 @@ class SeqClassifier(torch.nn.Module):
         # TODO: calculate the output dimension of rnn
         raise NotImplementedError
 
-    def forward(self, batch) -> Dict[str, torch.Tensor]:
+    def forward(self, batch, length) -> Dict[str, torch.Tensor]:
 
         x = self.embed(batch)
-        x = pack_padded_sequence(x, [len(data) for data in x], batch_first=True)
+        x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
 
         out_pack, ht = self.rnn(x)
     

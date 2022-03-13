@@ -10,9 +10,11 @@ from dataset import SeqClsDataset
 from model import SeqClassifier
 from utils import Vocab
 
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import csv  
 
 def main(args):
+
     with open(args.cache_dir / "vocab.pkl", "rb") as f:
         vocab: Vocab = pickle.load(f)
 
@@ -21,8 +23,6 @@ def main(args):
 
     data = json.loads(args.test_file.read_text())
     dataset = SeqClsDataset(data, vocab, intent2idx, args.max_len)
-
-    print( max([len(x['text'].split()) for x in data]) )
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
@@ -41,14 +41,17 @@ def main(args):
     model.eval()
     
     x=[]
+    seq_len=[]
     for data in dataset.data:
         text = data['text'].split()
         x.append(text)
+        seq_len.append(len(text))
         
     x = dataset.vocab.encode_batch(batch_tokens=x,to_len=dataset.max_len)
     x = torch.tensor(x,dtype=torch.int64).to(args.device)
+    seq_len = torch.tensor(seq_len,dtype=torch.int64).to(args.device)
 
-    p_label =model(x)
+    p_label = model(x,seq_len)
     p_label=torch.argmax(p_label, dim=1)
 
     with open(args.pred_file,'w',newline='') as f:
@@ -87,8 +90,8 @@ def parse_args() -> Namespace:
 
     # model
     parser.add_argument("--hidden_size", type=int, default=1024)
-    parser.add_argument("--num_layers", type=int, default=3)
-    parser.add_argument("--dropout", type=float, default=0.01)
+    parser.add_argument("--num_layers", type=int, default=2)
+    parser.add_argument("--dropout", type=float, default=0.32)
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # data loader

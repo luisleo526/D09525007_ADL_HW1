@@ -34,18 +34,19 @@ class SeqClsDataset(Dataset):
     def collate_fn(self, samples: List[Dict]) -> Dict:
         texts=[]
         labels=[]
-        data={}
+        seq_len=[]
         for sample in samples:
             _text=sample['text'].split(' ')
             texts.append(_text)
+            seq_len.append(len(_text))
             labels.append(self.label2idx(sample['intent']))
-            data
         texts=self.vocab.encode_batch(batch_tokens=texts,to_len=self.max_len)
 
         labels=torch.tensor(labels,dtype=torch.int64)
         texts=torch.tensor(texts,dtype=torch.int64)
+        seq_len=torch.tensor(seq_len,dtype=torch.int64)
 
-        return labels, texts
+        return labels, texts, seq_len
 
     def label2idx(self, label: str):
         return self.label_mapping[label]

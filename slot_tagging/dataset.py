@@ -36,11 +36,11 @@ class SeqClsDataset(Dataset):
         labels=[]
         data={}
         for sample in samples:
-            _text=sample['text'].split(' ')
-            texts.append(_text)
-            labels.append(self.label2idx(sample['intent']))
-            data
-        texts=self.vocab.encode_batch(batch_tokens=texts,to_len=self.max_len)
+            texts.append(sample['tokens'])
+            y=[self.label2idx(x) for x in sample['tags']]
+            for i in range(self.max_len-len(y)): y.append(len(self.label_mapping))
+            labels.append(y)
+        texts=self.vocab.encode_batch(batch_tokens=texts)
 
         labels=torch.tensor(labels,dtype=torch.int64)
         texts=torch.tensor(texts,dtype=torch.int64)

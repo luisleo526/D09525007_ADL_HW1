@@ -124,9 +124,9 @@ def train(model,dataloader,optimizer,criterion):
 
     model.train()
     tacc=0;n=0
-    for labels, texts in dataloader[0]:
+    for labels, texts, seq_len in dataloader[0]:
 
-        out = model(texts)
+        out = model(texts,seq_len)
         out = f(out)
         p_labels = torch.argmax(out, dim=1)
         
@@ -144,8 +144,8 @@ def train(model,dataloader,optimizer,criterion):
 
         model.eval()         
         acc=0;n=0
-        for labels, texts in dataloader[1]:
-            out = model(texts)
+        for labels, texts, seq_len in dataloader[1]:
+            out = model(texts,seq_len)
             out = f(out)
             p_labels = torch.argmax(out, dim=1)
             acc=acc+torch.sum(p_labels == labels)
@@ -191,13 +191,13 @@ def parse_args() -> Namespace:
     parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=512)   #128
+    parser.add_argument("--batch_size", type=int, default=256)   #128
 
     # training
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=25)
+    parser.add_argument("--num_epoch", type=int, default=30)
     parser.add_argument("--split",type=int,default=5)
 
     # output
