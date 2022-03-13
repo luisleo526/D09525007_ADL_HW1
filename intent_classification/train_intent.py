@@ -196,7 +196,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=18)
+    parser.add_argument("--num_epoch", type=int, default=25)
     parser.add_argument("--split",type=int,default=5)
 
     # output
