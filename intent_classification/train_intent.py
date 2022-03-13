@@ -42,16 +42,13 @@ def main(args):
     with open(f"./{args.name}_result","w") as f:
         f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
 
-    f = torch.nn.LogSoftmax(dim=1)
-
-
     if args.split > 1:
 
         for i in range(1,5):
 
-            hidden_size = args.hidden_size * 2**i
+            hidden_size = args.hidden_size
             num_layers = args.num_layers
-            batch_size = args.batch_size
+            batch_size = args.batch_size * 2**i
 
             torch.manual_seed(12)
             kf = KFold(n_splits=args.split)
@@ -64,7 +61,6 @@ def main(args):
                             num_layers=num_layers,dropout=args.dropout,bidirectional=args.bidirectional,num_class=len(intent2idx))
 
                 model.to(device)
-                #optimizer = optim.SGD(model.parameters(), lr=args.lr)
                 optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                              ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.9) ]
                 #criterion = torch.nn.CrossEntropyLoss()
@@ -75,42 +71,17 @@ def main(args):
                 test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
 
                 epoch_pbar = trange(args.num_epoch, desc="Epoch")
-                _acc=0
                 for epoch in epoch_pbar:
 
                     if len(optimizer) > 1:
                         for g in optimizer[-1].param_groups:
                             g['lr'] = args.lr * 0.2 ** ( epoch // 4 )
 
-                    model.train()
-                    tacc=0;n=0
-                    for labels, texts in train_loader:
-
-                        out = f(model(texts))
-                        p_labels = torch.argmax(out, dim=1)
-                        
-                        tacc+=torch.sum(p_labels==labels)
-                        n+=len(labels)
-
-                        loss = criterion(out,labels)
-                        for opt in optimizer: opt.zero_grad()
-                        loss.backward()
-                        for opt in optimizer: opt.step()
-
-                    tacc=tacc.item()/n*100
-                    
-                    model.eval()         
-                    acc=0;n=0
-                    for labels, texts in test_loader:
-                        out = f(model(texts))
-                        p_labels = torch.argmax(out, dim=1)
-                        acc=acc+torch.sum(p_labels == labels)
-                        n = n + len(labels)
-                    acc=acc.item()/n*100
+                    tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
 
                     epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",Acc=f"{tacc:.4f}% / {acc:.4f}%")
 
-                f_acc += acc / kf.get_n_splits()
+                f_acc += acc / args.split
 
             info=f"Dropout:{args.dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}\n"
             info+=f"Accuracy: {f_acc:.2f}%"
@@ -134,32 +105,56 @@ def main(args):
         train_loader=DataLoader(datasets,batch_size=args.batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)))
 
         epoch_pbar = trange(args.num_epoch, desc="Epoch")
-        _acc=0
         for epoch in epoch_pbar:
 
             if len(optimizer) > 1:
                 for g in optimizer[-1].param_groups:
                     g['lr'] = args.lr * 0.2 ** ( epoch // 4 )
 
-            model.train()
-            tacc=0;n=0
-            for labels, texts in train_loader:
-
-                out = f(model(texts))
-                p_labels = torch.argmax(out, dim=1)
-                
-                tacc+=torch.sum(p_labels==labels)
-                n+=len(labels)
-
-                loss = criterion(out,labels)
-                for opt in optimizer: opt.zero_grad()
-                loss.backward()
-                for opt in optimizer: opt.step()
-
-            tacc=tacc.item()/n*100
+            tacc = train(model,[train_loader],optimizer,criterion)
             epoch_pbar.set_postfix(Acc=f"{tacc:.4f}%")
 
         torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
+
+
+def train(model,dataloader,optimizer,criterion):
+
+    f = torch.nn.LogSoftmax(dim=1)
+
+    model.train()
+    tacc=0;n=0
+    for labels, texts in dataloader[0]:
+
+        out = model(texts)
+        out = f(out)
+        p_labels = torch.argmax(out, dim=1)
+        
+        tacc+=torch.sum(p_labels==labels)
+        n+=len(labels)
+
+        loss = criterion(out,labels)
+        for opt in optimizer: opt.zero_grad()
+        loss.backward()
+        for opt in optimizer: opt.step()
+
+    tacc=tacc.item()/n*100
+        
+    if len(dataloader) > 1:
+
+        model.eval()         
+        acc=0;n=0
+        for labels, texts in dataloader[1]:
+            out = model(texts)
+            out = f(out)
+            p_labels = torch.argmax(out, dim=1)
+            acc=acc+torch.sum(p_labels == labels)
+            n = n + len(labels)
+        acc=acc.item()/n*100
+
+    if len(dataloader) > 1:
+        return tacc,acc
+    else:
+        return tacc
     
 def parse_args() -> Namespace:
     parser = ArgumentParser()
@@ -195,7 +190,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)   #128
+    parser.add_argument("--batch_size", type=int, default=64)   #128
 
     # training
     parser.add_argument(
