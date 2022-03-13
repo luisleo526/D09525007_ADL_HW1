@@ -47,8 +47,8 @@ def main(args):
         for i in range(1,5):
 
             hidden_size = args.hidden_size
-            num_layers = args.num_layers
-            batch_size = args.batch_size * 2**i
+            num_layers = i+1 #args.num_layers
+            batch_size = args.batch_size 
 
             torch.manual_seed(12)
             kf = KFold(n_splits=args.split)
@@ -181,7 +181,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=32)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=128)  #1024
+    parser.add_argument("--hidden_size", type=int, default=1024)  #1024
     parser.add_argument("--num_layers", type=int, default=3)     #3
     parser.add_argument("--dropout", type=float, default=0.01)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -190,7 +190,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=64)   #128
+    parser.add_argument("--batch_size", type=int, default=128)   #128
 
     # training
     parser.add_argument(
