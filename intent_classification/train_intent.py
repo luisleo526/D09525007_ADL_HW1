@@ -44,12 +44,13 @@ def main(args):
 
     if args.split > 1:
 
-        for i in range(3):
+        for i in range(5):
             
             hidden_size = 1024 #args.hidden_size
-            num_layers  = 2+i  #args.num_layers
-            batch_size  = 512  #args.batch_size
-            dropout     = 0.32
+            num_layers  = 2    #args.num_layers
+            batch_size  = 256  #args.batch_size
+            dropout     = 0.3
+            lr          = 4e-3
 
             torch.manual_seed(12)
             kf = KFold(n_splits=args.split)
@@ -63,7 +64,7 @@ def main(args):
 
                 model.to(device)
                 optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                             ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.8) ]
+                             ,optim.SGD(model.parameters(), lr=lr, momentum=0.89) ]
                 #criterion = torch.nn.CrossEntropyLoss()
                 criterion = torch.nn.NLLLoss()
                 criterion.to(device)
@@ -76,7 +77,7 @@ def main(args):
 
                     if len(optimizer) > 1:
                         for g in optimizer[-1].param_groups:
-                            g['lr'] = args.lr * 0.2 ** ( epoch // 3 )
+                            g['lr'] = lr * 0.2 ** ( epoch // 3 )
 
                     tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
 
@@ -84,7 +85,7 @@ def main(args):
 
                 f_acc += acc / args.split
 
-            info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}\n"
+            info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
             info+=f"Accuracy: {f_acc:.2f}%"
             print("="*40)
             print(info)
@@ -188,10 +189,10 @@ def parse_args() -> Namespace:
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--lr", type=float, default=5e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=256)   #128
+    parser.add_argument("--batch_size", type=int, default=128)   #128
 
     # training
     parser.add_argument(
