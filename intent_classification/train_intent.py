@@ -44,7 +44,7 @@ def main(args):
 
     if args.split > 1:
 
-        for i in range(5):
+        for i in range(1):
             
             hidden_size = 1024 #args.hidden_size
             num_layers  = 2    #args.num_layers
@@ -100,7 +100,7 @@ def main(args):
 
         model.to(device)
         optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                     ,optim.SGD(model.parameters(), lr=args.lr) ]
+                     ,optim.SGD(model.parameters(), lr=args.lr, momentum=0.89) ]
         criterion = torch.nn.NLLLoss()
         criterion.to(device)
 
@@ -185,14 +185,14 @@ def parse_args() -> Namespace:
     # model
     parser.add_argument("--hidden_size", type=int, default=1024)  #1024
     parser.add_argument("--num_layers", type=int, default=2)     #3
-    parser.add_argument("--dropout", type=float, default=0.32)   #0.01
+    parser.add_argument("--dropout", type=float, default=0.3)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=5e-3)
+    parser.add_argument("--lr", type=float, default=4e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=128)   #128
+    parser.add_argument("--batch_size", type=int, default=256)   #128
 
     # training
     parser.add_argument(
