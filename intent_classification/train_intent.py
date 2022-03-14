@@ -46,7 +46,7 @@ def main(args):
             for j in range(2):
                 for k in range(3):
 
-                    hidden_size = 256 * 2**i 
+                    hidden_size = 128 * 2**i 
                     num_layers  = 2+j
                     batch_size  = 128 * 2**k
                     dropout     = 0.3
