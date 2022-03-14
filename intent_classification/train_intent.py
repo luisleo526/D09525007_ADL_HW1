@@ -39,59 +39,63 @@ def main(args):
 
     datasets = SeqClsDataset(data, vocab, intent2idx, args.max_len)
 
-    with open(f"./{args.name}_result","w") as f:
-        f.write(f">> Learning Rate: {args.lr}, max_len: {args.max_len}\n")
-
     if args.split > 1:
 
-        for i in range(1):
-            
-            hidden_size = 1024 #args.hidden_size
-            num_layers  = 2    #args.num_layers
-            batch_size  = 256  #args.batch_size
-            dropout     = 0.3
-            lr          = 4e-3
+        data=[]
+        for i in range(4):
+            for j in range(2):
+                for k in range(3):
 
-            torch.manual_seed(12)
-            kf = KFold(n_splits=args.split)
-            fold=0
-            f_acc=0
-            for train_ind, test_ind in kf.split(datasets):
+                    hidden_size = 256 * 2**i 
+                    num_layers  = 2+j
+                    batch_size  = 128 * 2**k
+                    dropout     = 0.3
+                    lr          = 4e-3
 
-                fold+=1
-                model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
-                            num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(intent2idx))
+                    torch.manual_seed(12)
+                    kf = KFold(n_splits=args.split)
+                    fold=0
+                    f_acc=0
+                    for train_ind, test_ind in kf.split(datasets):
 
-                model.to(device)
-                optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                             ,optim.SGD(model.parameters(), lr=lr, momentum=0.89) ]
-                #criterion = torch.nn.CrossEntropyLoss()
-                criterion = torch.nn.NLLLoss()
-                criterion.to(device)
+                        fold+=1
+                        model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
+                                    num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(intent2idx))
 
-                train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(train_ind))
-                test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
+                        model.to(device)
+                        optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
+                                     ,optim.SGD(model.parameters(), lr=lr, momentum=0.89) ]
+                        #criterion = torch.nn.CrossEntropyLoss()
+                        criterion = torch.nn.NLLLoss()
+                        criterion.to(device)
 
-                epoch_pbar = trange(args.num_epoch, desc="Epoch")
-                for epoch in epoch_pbar:
+                        train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(train_ind))
+                        test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
 
-                    if len(optimizer) > 1:
-                        for g in optimizer[-1].param_groups:
-                            g['lr'] = lr * 0.2 ** ( epoch // 3 )
+                        epoch_pbar = trange(args.num_epoch, desc="Epoch")
+                        for epoch in epoch_pbar:
 
-                    tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
+                            if len(optimizer) > 1:
+                                for g in optimizer[-1].param_groups:
+                                    g['lr'] = lr * 0.2 ** ( epoch // 3 )
 
-                    epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",Acc=f"{tacc:.4f}% / {acc:.4f}%")
+                            tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
 
-                f_acc += acc / args.split
+                            epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",Acc=f"{tacc:.4f}% / {acc:.4f}%")
 
-            info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
-            info+=f"Accuracy: {f_acc:.2f}%"
-            print("="*40)
-            print(info)
-            with open(f"./{args.name}_result","a") as f:
-                f.write(f"{info}\n")
-            print("="*40)
+                        f_acc += acc / args.split
+
+                    data.append( { 'params':{'hidden_size':hidden_size,'num_layers':num_layers,'batch_size':batch_size,'dropout':dropout,'lr':lr},'acc':f_acc } )
+
+                    info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
+                    info+=f"Accuracy: {f_acc:.2f}%"
+
+                    print("="*40)
+                    print(info)
+                    print("="*40)
+
+        with open(f"{args.name}.json", 'w') as f:
+            json.dump(data, f)
 
     else:
 
