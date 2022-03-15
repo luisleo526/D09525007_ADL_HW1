@@ -42,17 +42,17 @@ def main(args):
     if args.split > 1:
 
         data=[]
-        for i in range(4):
-            for j in range(2):
-                for k in range(3):
+        for i in range(1):
+            for j in range(1):
+                for k in range(1):
 
-                    hidden_size = 128 * 2**i 
-                    num_layers  = 2+j
-                    batch_size  = 128 * 2**k
-                    dropout     = 0.3
-                    lr          = 4e-3
+                    hidden_size = 512
+                    num_layers  = 2
+                    batch_size  = 512
+                    dropout     = 0.25
+                    lr          = 0.001
 
-                    torch.manual_seed(12)
+                    torch.manual_seed(24)
                     kf = KFold(n_splits=args.split)
                     fold=0
                     f_acc=0
@@ -187,16 +187,16 @@ def parse_args() -> Namespace:
     parser.add_argument("--max_len", type=int, default=32)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=1024)  #1024
+    parser.add_argument("--hidden_size", type=int, default=512)  #1024
     parser.add_argument("--num_layers", type=int, default=2)     #3
-    parser.add_argument("--dropout", type=float, default=0.3)   #0.01
+    parser.add_argument("--dropout", type=float, default=0.25)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer
-    parser.add_argument("--lr", type=float, default=4e-3)
+    parser.add_argument("--lr", type=float, default=1e-3)
 
     # data loader
-    parser.add_argument("--batch_size", type=int, default=256)   #128
+    parser.add_argument("--batch_size", type=int, default=512)   #128
 
     # training
     parser.add_argument(
