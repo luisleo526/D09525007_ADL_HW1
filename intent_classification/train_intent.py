@@ -40,22 +40,22 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, intent2idx, args.max_len)
 
     data=[]
-    for i in range(1):
-        for j in range(1):
-            for k in range(1):
+    for i in range(10):
+        for j in range(3):
+            for k in range(4):
 
-                hidden_size = 512
-                num_layers  = 2
-                batch_size  = 512
+                hidden_size = 128 * i
+                num_layers  = 2 + j
+                batch_size  = 128 * 2**k
                 dropout     = 0.25
-                lr          = 0.001
+                lr          = 0.2
 
                 torch.manual_seed(24)
 
                 if args.split > 1:
                     kf = KFold(n_splits=args.split)
                 else:
-                    kf = KFold(n_splits=5)
+                    kf = KFold(n_splits=100)
 
                 fold=0
                 f_acc=0
@@ -67,22 +67,19 @@ def main(args):
 
                     model.to(device)
                     optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                                 ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                    #criterion = torch.nn.CrossEntropyLoss()
-                    criterion = torch.nn.NLLLoss()
+                                 ,optim.SGD(model.parameters(), lr=lr, momentum=0.0) ]
+                    criterion = torch.nn.CrossEntropyLoss()
+                    # criterion = torch.nn.NLLLoss()
                     criterion.to(device)
 
                     train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(train_ind))
                     test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=lambda x: tuple(x_.to(device) for x_ in datasets.collate_fn(x)),sampler=SubsetRandomSampler(test_ind))
 
                     epoch_pbar = trange(args.num_epoch, desc="Epoch")
+                    tacc=0
                     for epoch in epoch_pbar:
 
-                        if len(optimizer) > 1:
-                            for g in optimizer[-1].param_groups:
-                                g['lr'] = lr * 0.2 ** ( epoch // 3 )
-
-                        tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion)
+                        tacc,acc = train(model,[train_loader,test_loader],optimizer,criterion,tacc)
 
                         epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",Acc=f"{tacc:.4f}% / {acc:.4f}%")
 
@@ -104,7 +101,7 @@ def main(args):
     with open(f"{args.name}.json", 'w') as f:
         json.dump(data, f)
 
-def train(model,dataloader,optimizer,criterion):
+def train(model,dataloader,optimizer,criterion,_tacc):
 
     f = torch.nn.LogSoftmax(dim=1)
 
@@ -113,26 +110,35 @@ def train(model,dataloader,optimizer,criterion):
     for labels, texts, seq_len in dataloader[0]:
 
         out = model(texts,seq_len)
-        out = f(out)
+        # out = f(out)
         p_labels = torch.argmax(out, dim=1)
         
         tacc+=torch.sum(p_labels==labels)
         n+=len(labels)
 
+        if _tacc < 99.5:
+            ind=0
+        else:
+            ind=1
+
         loss = criterion(out,labels)
-        for opt in optimizer: opt.zero_grad()
+        optimizer[ind].zero_grad()
         loss.backward()
-        for opt in optimizer: opt.step()
+        optimizer[ind].step()
 
     tacc=tacc.item()/n*100
-        
+
+    if tacc > 99:
+        for g in optimizer[-1].param_groups:
+            g['lr'] *= 0.9
+
     if len(dataloader) > 1:
 
         model.eval()         
         acc=0;n=0
         for labels, texts, seq_len in dataloader[1]:
             out = model(texts,seq_len)
-            out = f(out)
+            # out = f(out)
             p_labels = torch.argmax(out, dim=1)
             acc=acc+torch.sum(p_labels == labels)
             n = n + len(labels)
@@ -191,7 +197,6 @@ def parse_args() -> Namespace:
 
     args = parser.parse_args()
     return args
-
 
 if __name__ == "__main__":
     args = parse_args()

@@ -47,7 +47,7 @@ def main(args):
         x.append(text)
         seq_len.append(len(text))
         
-    x = dataset.vocab.encode_batch(batch_tokens=x,to_len=dataset.max_len)
+    x = dataset.vocab.encode_batch(batch_tokens=x)
     x = torch.tensor(x,dtype=torch.int64).to(args.device)
     seq_len = torch.tensor(seq_len,dtype=torch.int64).to(args.device)
 

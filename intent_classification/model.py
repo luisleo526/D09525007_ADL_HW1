@@ -31,9 +31,7 @@ class SeqClassifier(torch.nn.Module):
         x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
 
         out_pack, ht = self.rnn(x)
-    
-        #hidden = ht[-1,:,:]
-        #hidden = self.fc(hidden)
+
         hidden = self.fc(torch.cat((ht[-2,:,:], ht[-1,:,:]), dim = 1))
 
         return hidden

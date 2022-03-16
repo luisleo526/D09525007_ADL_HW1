@@ -40,7 +40,8 @@ class SeqClsDataset(Dataset):
             texts.append(_text)
             seq_len.append(len(_text))
             labels.append(self.label2idx(sample['intent']))
-        texts=self.vocab.encode_batch(batch_tokens=texts,to_len=self.max_len)
+
+        texts=self.vocab.encode_batch(batch_tokens=texts)
 
         labels=torch.tensor(labels,dtype=torch.int64)
         texts=torch.tensor(texts,dtype=torch.int64)
