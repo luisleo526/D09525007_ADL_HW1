@@ -58,7 +58,7 @@ def main(args):
                     kf = KFold(n_splits=100)
 
                 fold=0
-                f_acc=0
+                f_acc={'token':0,'sentence':0}
                 for train_ind, test_ind in kf.split(datasets):
 
                     fold+=1
@@ -78,7 +78,6 @@ def main(args):
 
                     epoch_pbar = trange(args.num_epoch, desc="Epoch")
 
-                    f_acc={'token':0,'sentence':0}
                     for epoch in epoch_pbar:
 
                         msg = train(model,[train_loader,test_loader],optimizer,criterion,device)
