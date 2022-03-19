@@ -40,9 +40,9 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, slot2idx, 36)
 
     data=[]
-    for i in range(8):
+    for k in range(3):
         for j in range(4):
-            for k in range(3):
+            for i in range(8):
 
                 hidden_size = 128 * (i+1)
                 num_layers  = 2 + j
@@ -69,8 +69,8 @@ def main(args):
                     # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                     #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
                     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
-                    criterion = torch.nn.CrossEntropyLoss()
-                    # criterion = torch.nn.NLLLoss()
+                    # criterion = torch.nn.CrossEntropyLoss()
+                    criterion = torch.nn.NLLLoss()
                     criterion.to(device)
 
                     train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(train_ind))
