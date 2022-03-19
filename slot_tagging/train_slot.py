@@ -40,13 +40,13 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, slot2idx, 36)
 
     data=[]
-    for i in range(1):
-        for j in range(1):
-            for k in range(1):
+    for i in range(8):
+        for j in range(4):
+            for k in range(3):
 
-                hidden_size = 128
-                num_layers  = 2
-                batch_size  = 256
+                hidden_size = 128 * (i+1)
+                num_layers  = 2 + j
+                batch_size  = 256 * 2**k
                 dropout     = 0.1
                 lr          = 0.1
 
