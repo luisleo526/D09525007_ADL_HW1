@@ -32,20 +32,22 @@ class SeqClsDataset(Dataset):
         return len(self.label_mapping)
 
     def collate_fn(self, samples: List[Dict]) -> Dict:
+
         texts=[]
         labels=[]
-        data={}
+        seq_len=[]
+
         for sample in samples:
             texts.append(sample['tokens'])
             y=[self.label2idx(x) for x in sample['tags']]
-            for i in range(self.max_len-len(y)): y.append(len(self.label_mapping))
             labels.append(y)
+            seq_len.append(len(y))
+
         texts=self.vocab.encode_batch(batch_tokens=texts)
-
-        labels=torch.tensor(labels,dtype=torch.int64)
         texts=torch.tensor(texts,dtype=torch.int64)
-
-        return labels, texts
+        seq_len=torch.tensor(seq_len,dtype=torch.int64)
+        
+        return labels, texts, seq_len
 
     def label2idx(self, label: str):
         return self.label_mapping[label]

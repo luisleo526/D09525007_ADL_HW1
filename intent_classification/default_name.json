@@ -1,1 +1,0 @@
-[{"params": {"hidden_size": 512, "num_layers": 2, "batch_size": 512, "dropout": 0.25, "lr": 0.001}, "acc": 94.9}]

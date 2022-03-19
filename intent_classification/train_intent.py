@@ -40,22 +40,22 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, intent2idx, args.max_len)
 
     data=[]
-    for i in range(10):
-        for j in range(3):
-            for k in range(4):
+    for i in range(12):
+        for j in range(5):
+            for k in range(1):
 
-                hidden_size = 128 * i
-                num_layers  = 2 + j
-                batch_size  = 128 * 2**k
-                dropout     = 0.25
-                lr          = 0.2
+                hidden_size = 1024 #128 * (i+1)
+                num_layers  = 2    #2 + j
+                batch_size  = 256  #128 * 2**k
+                dropout     = 0.25 #0.05 * i
+                lr          = 0.125#1.0 * 0.5**j
 
                 torch.manual_seed(24)
 
                 if args.split > 1:
                     kf = KFold(n_splits=args.split)
                 else:
-                    kf = KFold(n_splits=100)
+                    kf = KFold(n_splits=50)
 
                 fold=0
                 f_acc=0
@@ -67,7 +67,7 @@ def main(args):
 
                     model.to(device)
                     optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                                 ,optim.SGD(model.parameters(), lr=lr, momentum=0.0) ]
+                                 ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
                     criterion = torch.nn.CrossEntropyLoss()
                     # criterion = torch.nn.NLLLoss()
                     criterion.to(device)
@@ -189,7 +189,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=30)
+    parser.add_argument("--num_epoch", type=int, default=40)
     parser.add_argument("--split",type=int,default=5)
 
     # output

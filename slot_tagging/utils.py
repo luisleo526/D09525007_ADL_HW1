@@ -1,6 +1,23 @@
 from typing import Iterable, List
 
 
+class Acc_counter(object):
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.acc=0
+        self.n=0
+
+    def add(self,match):
+        if match:
+            self.acc += 1
+        self.n +=1
+
+    def out(self):
+        return self.acc / self.n * 100
+
 class Vocab:
     PAD = "[PAD]"
     UNK = "[UNK]"
