@@ -62,15 +62,19 @@ def main(args):
                 for train_ind, test_ind in kf.split(datasets):
 
                     fold+=1
+                    
                     model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
                                 num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(slot2idx))
 
                     model.to(device)
+
                     # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                     #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
-                    # criterion = torch.nn.CrossEntropyLoss()
-                    criterion = torch.nn.NLLLoss()
+                    # optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
+                    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+
+                    criterion = torch.nn.CrossEntropyLoss()
+                    # criterion = torch.nn.NLLLoss()
                     criterion.to(device)
 
                     train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(train_ind))
@@ -82,7 +86,9 @@ def main(args):
 
                         msg = train(model,[train_loader,test_loader],optimizer,criterion,device)
 
-                        epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
+                        epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",
+                            sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
+
                     f_acc['token'] += msg['val']['token'] / kf.get_n_splits()
                     f_acc['sentence'] += msg['val']['sentence'] / kf.get_n_splits()
 
@@ -90,7 +96,8 @@ def main(args):
                         torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
                         quit()
 
-                data.append( { 'params':{'hidden_size':hidden_size,'num_layers':num_layers,'batch_size':batch_size,'dropout':dropout,'lr':lr},'token_acc':f_acc['token'],'sentence_acc':f_acc['sentence'] } )
+                data.append( { 'params':{'hidden_size':hidden_size,'num_layers':num_layers,'batch_size':batch_size,
+                    'dropout':dropout,'lr':lr},'token_acc':f_acc['token'],'sentence_acc':f_acc['sentence'] } )
 
                 info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
                 info+=f"Accuracy: {f_acc['token']:.4f}% / {f_acc['sentence']:.4f}%"
