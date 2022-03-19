@@ -42,9 +42,9 @@ def main(args):
     data=[]
     for k in range(3):
         for j in range(4):
-            for i in range(8):
+            for i in range(4):
 
-                hidden_size = 128 * (i+1)
+                hidden_size = 128 * 2**i
                 num_layers  = 2 + j
                 batch_size  = 256 * 2**k
                 dropout     = 0.1
@@ -70,8 +70,8 @@ def main(args):
 
                     # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                     #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                    # optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
-                    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+                    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
+                    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
                     criterion = torch.nn.CrossEntropyLoss()
                     # criterion = torch.nn.NLLLoss()
