@@ -42,7 +42,7 @@ class SeqClassifier(torch.nn.Module):
         out, _ = self.rnn(x)
         out, _ = pad_packed_sequence(out, batch_first=True)
         out = self.fc(out)
-        out = F.softmax(out,dim=2)
+        # out = F.softmax(out,dim=2)
         
         return out
 
