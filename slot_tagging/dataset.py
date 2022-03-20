@@ -43,7 +43,7 @@ class SeqClsDataset(Dataset):
             labels.append(y)
             seq_len.append(len(y))
 
-        texts=self.vocab.encode_batch(batch_tokens=texts,to_len=self.max_len)
+        texts=self.vocab.encode_batch(batch_tokens=texts)
         texts=torch.tensor(texts,dtype=torch.int64)
         seq_len=torch.tensor(seq_len,dtype=torch.int64)
         

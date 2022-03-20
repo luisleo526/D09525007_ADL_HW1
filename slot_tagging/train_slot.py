@@ -36,7 +36,7 @@ def main(args):
     data_paths = {split: args.data_dir / f"{split}.json" for split in ['train','eval']}
     data = {split: json.loads(path.read_text()) for split, path in data_paths.items()}
     data=[y for x in data.keys() for y in data[x] ]
-
+    data=[x for x in data if len(x['tokens']) <= args.max_len ]
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
     datasets = SeqClsDataset(data, vocab, slot2idx, args.max_len)
@@ -51,11 +51,11 @@ def main(args):
             for j in range(1):
                 for i in range(1):
 
-                    hidden_size = 512 #128 * 2**i
-                    num_layers  = 2   #2 + j
-                    batch_size  = 128 #256 * 2**k
-                    dropout     = 0.1 #0.05 + 0.05*k 
-                    lr          = 0.001
+                    hidden_size = args.hidden_size
+                    num_layers  = args.num_layers
+                    batch_size  = args.batch_size
+                    dropout     = args.dropout
+                    lr          = args.lr
 
                     torch.manual_seed(24)
 
@@ -77,7 +77,7 @@ def main(args):
 
                         # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                         #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),weight_decay=0.01,lr=lr)
+                        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), weight_decay=0.1)
                         # optimizer = optim.SGD(model.parameters(), lr=lr)
 
                         # criterion = torch.nn.CrossEntropyLoss()
@@ -217,12 +217,12 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=40)
+    parser.add_argument("--max_len", type=int, default=24)
 
     # model
     parser.add_argument("--hidden_size", type=int, default=128)  #1024
     parser.add_argument("--num_layers", type=int, default=2)     #3
-    parser.add_argument("--dropout", type=float, default=0.25)   #0.01
+    parser.add_argument("--dropout", type=float, default=0.1)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
 
     # optimizer

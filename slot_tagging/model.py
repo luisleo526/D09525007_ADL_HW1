@@ -20,7 +20,7 @@ class SeqClassifier(torch.nn.Module):
         super(SeqClassifier, self).__init__()
         self.embed = Embedding.from_pretrained(embeddings, freeze=False)
 
-        self.rnn = nn.GRU( input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional)
+        self.rnn = nn.LSTM( input_size=self.embed.embedding_dim, hidden_size=hidden_size, num_layers=num_layers, dropout=dropout,bidirectional=bidirectional,batch_first=True)
         
         self.num_class = num_class
         
@@ -37,10 +37,10 @@ class SeqClassifier(torch.nn.Module):
     def forward(self, batch, length, device) -> Dict[str, torch.Tensor]:
 
         x = self.embed(batch.to(device))
-        # x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
+        x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
 
         out, _ = self.rnn(x)
-        # out, _ = pad_packed_sequence(out, batch_first=True)
+        out, _ = pad_packed_sequence(out, batch_first=True)
         out = self.fc(out)
         out = F.log_softmax(out,dim=2)
         
