@@ -40,14 +40,14 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, slot2idx, 36)
 
     data=[]
-    for k in range(3):
-        for j in range(4):
-            for i in range(4):
+    for k in range(10):
+        for j in range(1):
+            for i in range(1):
 
-                hidden_size = 128 * 2**i
-                num_layers  = 2 + j
-                batch_size  = 256 * 2**k
-                dropout     = 0.1
+                hidden_size = 512 #128 * 2**i
+                num_layers  = 3   #2 + j
+                batch_size  = 256 #256 * 2**k
+                dropout     = 0.05 + 0.05*k 
                 lr          = 0.1
 
                 torch.manual_seed(24)
