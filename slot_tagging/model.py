@@ -42,7 +42,7 @@ class SeqClassifier(torch.nn.Module):
         out, _ = self.rnn(x)
         out, _ = pad_packed_sequence(out, batch_first=True)
         out = self.fc(out)
-        out = F.log_softmax(out,dim=2)
+        # out = F.log_softmax(out,dim=2)
         
         return out
 
@@ -60,7 +60,7 @@ class SeqClassifier(torch.nn.Module):
                 loss += criterion(yy,torch.tensor(y[i]).to(device))
 
             py = torch.argmax(yy,dim=1).tolist()
-            
+
             acc1.add(py==y[i])
 
             for j in range(len(py)):
@@ -73,7 +73,7 @@ class SeqClassifier(torch.nn.Module):
         x = self.embed(x.to(device))
         out, _ = self.rnn(x)
         out = self.fc(out)
-        out = F.log_softmax(out,dim=2)
+        # out = F.log_softmax(out,dim=2)
 
         prediction = torch.argmax(out,dim=2).view(-1).tolist()
 
