@@ -16,6 +16,8 @@ import torch.optim as optim
 from sklearn.model_selection import KFold
 
 import torch.nn.functional as F
+import csv  
+import os  
 
 TRAIN = "train"
 DEV = "eval"
@@ -37,77 +39,126 @@ def main(args):
 
     embeddings = torch.load(args.cache_dir / "embeddings.pt")
 
-    datasets = SeqClsDataset(data, vocab, slot2idx, 36)
+    datasets = SeqClsDataset(data, vocab, slot2idx, args.max_len)
 
-    data=[]
-    for k in range(10):
-        for j in range(1):
-            for i in range(1):
+    test_file = args.data_dir / "test.json"
+    test_datasets = SeqClsDataset(json.loads(test_file.read_text()), vocab, slot2idx, args.max_len)
 
-                hidden_size = 512 #128 * 2**i
-                num_layers  = 3   #2 + j
-                batch_size  = 256 #256 * 2**k
-                dropout     = 0.05 + 0.05*k 
-                lr          = 0.1
+    if not args.predict:
 
-                torch.manual_seed(24)
+        data=[]
+        for k in range(1):
+            for j in range(1):
+                for i in range(1):
 
-                if args.split > 1:
-                    kf = KFold(n_splits=args.split)
-                else:
-                    kf = KFold(n_splits=100)
+                    hidden_size = 512 #128 * 2**i
+                    num_layers  = 2   #2 + j
+                    batch_size  = 128 #256 * 2**k
+                    dropout     = 0.1 #0.05 + 0.05*k 
+                    lr          = 0.001
 
-                fold=0
-                f_acc={'token':0,'sentence':0}
-                for train_ind, test_ind in kf.split(datasets):
+                    torch.manual_seed(24)
 
-                    fold+=1
-                    
-                    model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
-                                num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(slot2idx))
+                    if args.split > 1:
+                        kf = KFold(n_splits=args.split)
+                    else:
+                        kf = KFold(n_splits=100)
 
-                    model.to(device)
+                    fold=0
+                    f_acc={'token':0,'sentence':0}
+                    for train_ind, test_ind in kf.split(datasets):
 
-                    # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
-                    #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
-                    # optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+                        fold+=1
+                        
+                        model = SeqClassifier(embeddings=embeddings,hidden_size=hidden_size,
+                                    num_layers=num_layers,dropout=dropout,bidirectional=args.bidirectional,num_class=len(slot2idx))
 
-                    criterion = torch.nn.CrossEntropyLoss()
-                    # criterion = torch.nn.NLLLoss()
-                    criterion.to(device)
+                        model.to(device)
 
-                    train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(train_ind))
-                    test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(test_ind))
+                        # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
+                        #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
+                        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),weight_decay=0.01,lr=lr)
+                        # optimizer = optim.SGD(model.parameters(), lr=lr)
 
-                    epoch_pbar = trange(args.num_epoch, desc="Epoch")
+                        # criterion = torch.nn.CrossEntropyLoss()
+                        criterion = torch.nn.NLLLoss()
+                        criterion.to(device)
 
-                    for epoch in epoch_pbar:
+                        train_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(train_ind))
+                        test_loader=DataLoader(datasets,batch_size=batch_size,shuffle=False,collate_fn=datasets.collate_fn,sampler=SubsetRandomSampler(test_ind))
 
-                        msg = train(model,[train_loader,test_loader],optimizer,criterion,device)
+                        epoch_pbar = trange(args.num_epoch, desc="Epoch")
 
-                        epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",
-                            sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
+                        for epoch in epoch_pbar:
 
-                    f_acc['token'] += msg['val']['token'] / kf.get_n_splits()
-                    f_acc['sentence'] += msg['val']['sentence'] / kf.get_n_splits()
+                            msg = train(model,[train_loader,test_loader],optimizer,criterion,device)
 
-                    if args.split < 1: 
-                        torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
-                        quit()
+                            epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",
+                                sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
 
-                data.append( { 'params':{'hidden_size':hidden_size,'num_layers':num_layers,'batch_size':batch_size,
-                    'dropout':dropout,'lr':lr},'token_acc':f_acc['token'],'sentence_acc':f_acc['sentence'] } )
+                        f_acc['token'] += msg['val']['token'] / kf.get_n_splits()
+                        f_acc['sentence'] += msg['val']['sentence'] / kf.get_n_splits()
 
-                info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
-                info+=f"Accuracy: {f_acc['token']:.4f}% / {f_acc['sentence']:.4f}%"
+                        if args.split < 1: 
+                            torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
+                            quit()
 
-                print("="*40)
-                print(info)
-                print("="*40)
+                        break
 
-    with open(f"{args.name}.json", 'w') as f:
-        json.dump(data, f)
+                    data.append( { 'params':{'hidden_size':hidden_size,'num_layers':num_layers,'batch_size':batch_size,
+                        'dropout':dropout,'lr':lr},'token_acc':f_acc['token'],'sentence_acc':f_acc['sentence'] } )
+
+                    info=f"Dropout:{dropout:.4f}, hidden_size:{hidden_size:d}, layers:{num_layers:d}, batch_size:{batch_size:d}, LR={lr:.4E}\n"
+                    info+=f"Accuracy: {f_acc['token']:.4f}% / {f_acc['sentence']:.4f}%"
+
+                    print("="*40)
+                    print(info)
+                    print("="*40)
+
+
+        with open(f"{args.name}.json", 'w') as f:
+            json.dump(data, f)
+
+    else:
+
+        model = SeqClassifier(embeddings=embeddings,hidden_size=args.hidden_size,
+                    num_layers=args.num_layers,dropout=args.dropout,bidirectional=args.bidirectional,num_class=len(slot2idx))
+
+        model.to(device)
+
+        if not os.path.exists(args.ckpt_path):
+
+            model.train()
+            optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
+            criterion = torch.nn.CrossEntropyLoss()
+            criterion.to(device)
+
+            train_loader=DataLoader(datasets,batch_size=args.batch_size,shuffle=False,collate_fn=datasets.collate_fn)
+
+            epoch_pbar = trange(args.num_epoch, desc="Epoch")
+
+            for epoch in epoch_pbar:
+
+                msg = train(model,[train_loader],optimizer,criterion,device)
+
+                epoch_pbar.set_postfix(Preparing_the_model="...",token=f"{msg['train']['token']:.4f}%",
+                    sentence=f"{msg['train']['sentence']:.4f}%")
+
+            torch.save(model.state_dict(),args.ckpt_path)
+
+        else:
+            ckpt = torch.load(args.ckpt_path)
+            model.load_state_dict(ckpt)
+
+        model.eval()
+        with open(args.pred_file,'w',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['id','tags'])
+            for sample in test_datasets.data:
+                x = torch.tensor( [test_datasets.vocab.encode(sample['tokens'])] )
+                prediction = model.predict_label(x,device)
+                msg = " ".join([test_datasets.idx2label(i) for i in prediction])
+                writer.writerow([sample['id'],msg])
 
 def train(model,dataloader,optimizer,criterion,device):
 
@@ -143,6 +194,9 @@ def train(model,dataloader,optimizer,criterion,device):
     
 def parse_args() -> Namespace:
     parser = ArgumentParser()
+    parser.add_argument("--ckpt_path",type=Path,default="./ckpt/slot/tags_best_model.pth")
+    parser.add_argument("--predict",type=bool,default=False)
+    parser.add_argument("--pred_file",type=Path, default="pred.tags.csv")
     parser.add_argument(
         "--data_dir",
         type=Path,
@@ -163,10 +217,10 @@ def parse_args() -> Namespace:
     )
 
     # data
-    parser.add_argument("--max_len", type=int, default=32)
+    parser.add_argument("--max_len", type=int, default=40)
 
     # model
-    parser.add_argument("--hidden_size", type=int, default=512)  #1024
+    parser.add_argument("--hidden_size", type=int, default=128)  #1024
     parser.add_argument("--num_layers", type=int, default=2)     #3
     parser.add_argument("--dropout", type=float, default=0.25)   #0.01
     parser.add_argument("--bidirectional", type=bool, default=True)
@@ -181,7 +235,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda"
     )
-    parser.add_argument("--num_epoch", type=int, default=60)
+    parser.add_argument("--num_epoch", type=int, default=20)
     parser.add_argument("--split",type=int,default=5)
 
     # output

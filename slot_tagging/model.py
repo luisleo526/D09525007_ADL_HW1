@@ -37,12 +37,12 @@ class SeqClassifier(torch.nn.Module):
     def forward(self, batch, length, device) -> Dict[str, torch.Tensor]:
 
         x = self.embed(batch.to(device))
-        x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
+        # x = pack_padded_sequence(x, length.cpu(), batch_first=True, enforce_sorted=False)
 
         out, _ = self.rnn(x)
-        out, _ = pad_packed_sequence(out, batch_first=True)
+        # out, _ = pad_packed_sequence(out, batch_first=True)
         out = self.fc(out)
-        # out = F.softmax(out,dim=2)
+        out = F.log_softmax(out,dim=2)
         
         return out
 
@@ -67,3 +67,14 @@ class SeqClassifier(torch.nn.Module):
                 acc2.add(py[j]==y[i][j])
 
         return loss
+
+    def predict_label(self,x,device):
+
+        x = self.embed(x.to(device))
+        out, _ = self.rnn(x)
+        out = self.fc(out)
+        out = F.log_softmax(out,dim=2)
+
+        prediction = torch.argmax(out,dim=2).view(-1).tolist()
+
+        return prediction
