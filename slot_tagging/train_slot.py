@@ -47,11 +47,11 @@ def main(args):
     if not args.predict:
 
         data=[]
-        for k in range(1):
+        for k in range(10):
             for j in range(1):
                 for i in range(1):
 
-                    hidden_size = args.hidden_size
+                    hidden_size = 64 * k
                     num_layers  = args.num_layers
                     batch_size  = args.batch_size
                     dropout     = args.dropout
@@ -77,7 +77,7 @@ def main(args):
 
                         # optimizer = [ optim.Adam(filter(lambda p: p.requires_grad, model.parameters())) 
                         #              ,optim.SGD(model.parameters(), lr=lr, momentum=0.9) ]
-                        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), weight_decay=0.1)
+                        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), weight_decay=0.05)
                         # optimizer = optim.SGD(model.parameters(), lr=lr)
 
                         # criterion = torch.nn.CrossEntropyLoss()
@@ -96,8 +96,8 @@ def main(args):
                             epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",
                                 sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
 
-                        f_acc['token'] += msg['val']['token'] / kf.get_n_splits()
-                        f_acc['sentence'] += msg['val']['sentence'] / kf.get_n_splits()
+                        f_acc['token'] += msg['val']['token'] #/ kf.get_n_splits()
+                        f_acc['sentence'] += msg['val']['sentence'] #/ kf.get_n_splits()
 
                         if args.split < 1: 
                             torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
