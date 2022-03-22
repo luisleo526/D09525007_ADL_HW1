@@ -42,13 +42,13 @@ def main(args):
     datasets = SeqClsDataset(data, vocab, slot2idx, args.max_len)
 
     data=[]
-    for k in range(1):
-        for j in range(1):
-            for i in range(1):
+    for k in range(1,9):
+        for j in range(3):
+            for i in range(3):
 
-                hidden_size = args.hidden_size
-                num_layers  = args.num_layers
-                batch_size  = args.batch_size
+                hidden_size = 128*k #args.hidden_size
+                num_layers  = 2+j   #args.num_layers
+                batch_size  = 128*2**i #args.batch_size
                 dropout     = args.dropout
                 lr          = args.lr
 
@@ -91,14 +91,12 @@ def main(args):
                         epoch_pbar.set_postfix(fold=f"{fold:d}/{kf.get_n_splits():d}",token=f"{msg['train']['token']:.4f}% / {msg['val']['token']:.4f}%",
                             sentence=f"{msg['train']['sentence']:.4f}% / {msg['val']['sentence']:.4f}%")
 
-                    f_acc['token'] += msg['val']['token'] #/ kf.get_n_splits()
-                    f_acc['sentence'] += msg['val']['sentence'] #/ kf.get_n_splits()
+                    f_acc['token'] += msg['val']['token'] / kf.get_n_splits()
+                    f_acc['sentence'] += msg['val']['sentence'] / kf.get_n_splits()
 
                     if args.split < 1: 
                         torch.save(model.state_dict(),args.ckpt_dir / "intent_best_model.pth")
                         quit()
-
-                    break
 
                 if args.predict: predict(args,model,vocab,slot2idx)
 
