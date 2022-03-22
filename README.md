@@ -1,20 +1,9 @@
-# Sample Code for Homework 1 ADL NTU 109 Spring
+# Reproduce the model
 
-## Environment
-```shell
-# If you have conda, we recommend you to build a conda environment called "adl"
-make
-# otherwise
-pip install -r requirements.txt
-```
+## Intent classification
 
-## Preprocessing
-```shell
-# To preprocess intent detectiona and slot tagging datasets
-bash preprocess.sh
-```
+python3 train_intent.py --split=0
 
-## Intent detection
-```shell
-python train_intent.py
-```
+## Slot tagging
+
+python3 train_slot.py --split=0
